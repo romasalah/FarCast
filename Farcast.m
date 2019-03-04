@@ -1,4 +1,4 @@
-function Farcast(nn,mode)
+function allnets=Farcast(nn,mode)
 %% Settings
 includediff=1;
 includecyc=0;
@@ -8,6 +8,7 @@ transX=1;
 numhistpt=10;
 numofstocks=30;
 numofcryptos=50;
+numofnets=10;
 D1 = LagOp({1,-1},'Lags',[0,1]);
 period=20;
 farvmod=1;
@@ -239,7 +240,7 @@ nobs2=size(X,1);
 %add best difference, best MA and best Lag to the predictor variables.
 %add hpfilter to predictor variables
 %Do that for all the predictor variables which are time series themselves.
-
+for nets_i=1:numofnets
 mulagi={};medlagi={};
 clear mulagi medlagi ppmu ppmed allp muallmu medallmu
 for maxma_i=1:size(maxMAs,2)
@@ -405,9 +406,6 @@ for maxma_i=1:size(maxMAs,2)
                     numHiddenUnits = 200;
                     layers = [ ...
                         sequenceInputLayer(nfeatures)
-                        dropoutLayer
-                        bilstmLayer(numHiddenUnits,'Output','sequence')
-                        bilstmLayer(numHiddenUnits,'Output','sequence')
                         bilstmLayer(numHiddenUnits,'Output','sequence')
                         fullyConnectedLayer(nfeatures)
                         regressionLayer];
@@ -512,11 +510,46 @@ subplot(2,1,1)
 plot(modtgt(end-(numhistpt-1)-retractpred_i:end),'r','LineWidth',1)
 hold on;
 plot(numhistpt:numhistpt+retractpred_i,[lastknownpt muallmuvalid],'g');hold on; plot(numhistpt:numhistpt+retractpred_i,[lastknownpt medallmuvalid],'k');
-title('Atual and Predicted price')
+title('Actual and Predicted price')
 lseofmu=(abs(modtgt(end-retractpred_i+1:end)'- muallmuvalid)./modtgt(end-retractpred_i+1:end)').*100;
 lseofmed=(abs(modtgt(end-retractpred_i+1:end)'- medallmuvalid)./modtgt(end-retractpred_i+1:end)').*100;
+MSEmed=mean(lseofmed);
+MSEmu=mean(lseofmu);
 subplot(2,1,2);plot(lseofmu,'g');hold on;plot(lseofmed,'k');
 title('Absolute difference in percentage at each point')
+allnets(nets_i).net=net;
+allnets(nets_i).mu=muallmuvalid;
+allnets(nets_i).med=medallmuvalid;
+allnets(nets_i).muabserr=lseofmu;
+allnets(nets_i).medabserr=lseofmed;
+allnets(nets_i).medMSE=MSEmed;
+allnets(nets_i).muMSE=MSEmu;
+clear MSEmu MSEmed muallmuvalid medallmuvalid lseofmu lseofmed net
+end
+for i=1:size(allnets,2)
+allnetsmuall(i,:)=allnets(i).mu;
+allnetsmedall(i,:)=allnets(i).med;
+end
+allnetsmu=mean(allnetsmuall,1);
+allnetsmed=mean(allnetsmedall,1);
+figure;
+subplot(2,1,1)
+plot(modtgt(end-(numhistpt-1)-retractpred_i:end),'r','LineWidth',1)
+hold on;
+plot(numhistpt:numhistpt+retractpred_i,[lastknownpt allnetsmu],'g');hold on; plot(numhistpt:numhistpt+retractpred_i,[lastknownpt allnetsmed],'k');
+title(['Actual and Predicted price over ' num2str(numofnets) ' networks'])
+lseofallnetsmu=(abs(modtgt(end-retractpred_i+1:end)'- allnetsmu)./modtgt(end-retractpred_i+1:end)').*100;
+lseofallnetsmed=(abs(modtgt(end-retractpred_i+1:end)'- allnetsmed)./modtgt(end-retractpred_i+1:end)').*100;
+MSEallnetsmed=mean(lseofallnetsmed);
+MSEallnetsmu=mean(lseofallnetsmu);
+subplot(2,1,2);plot(lseofallnetsmu,'g');hold on;plot(lseofallnetsmed,'k');
+title('Absolute difference in percentage at each point')
+allnets(1).allnetsmu=allnetsmu;
+allnets(1).allnetsmed=allnetsmed;
+allnets(1).MSEallnetsmu=MSEallnetsmu;
+allnets(1).MSEallnetsmed=MSEallnetsmed;
+allnets(1).LSEallnetsmed=lseofallnetsmed;
+allnets(1).LSEallnetsmu=lseofallnetsmu;
 end
 function [m_diff]=diff_Farcast(M,ft)
 msize=size(M,2);
