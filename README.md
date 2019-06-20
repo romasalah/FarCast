@@ -1,6 +1,6 @@
 # FarCast
 
-FarCast is a MatLab code to Forcast price of you desired cryptocurrency using the prices and trading volumes of the highest n cryptocurrencies and highest m stocks of specific industries in trading volume.
+FarCast is a MatLab code to Forecast price of you desired cryptocurrency using the prices and trading volumes of the highest n cryptocurrencies and highest m stocks of specific industries in trading volume.
 
 Required:
 JPL7 econometrics library https://www.spatial-econometrics.com/
